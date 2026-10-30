@@ -13,9 +13,9 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# GitHub Repository Adresleri (İhtiyaç halinde SSH veya env ile ezilebilir)
-BACKEND_REPO="${BACKEND_REPO:-https://github.com/serkanisel/personal-site-backend.git}"
-FRONTEND_REPO="${FRONTEND_REPO:-https://github.com/serkanisel/personal-site-frontend.git}"
+# GitHub Repository Adresleri (SSH formatı - server SSH key'ini kullanır)
+BACKEND_REPO="${BACKEND_REPO:-git@github.com:serkanisel/personal-site-backend.git}"
+FRONTEND_REPO="${FRONTEND_REPO:-git@github.com:serkanisel/personal-site-frontend.git}"
 BRANCH="${BRANCH:-main}"
 
 echo -e "${BLUE}======================================================${NC}"
@@ -69,6 +69,7 @@ echo -e "\n${YELLOW}[3/6] Backend ve Frontend kaynak kodları senkronize ediliyo
 BACKEND_DIR="$PARENT_DIR/personal-site-backend"
 if [ -d "$BACKEND_DIR/.git" ]; then
     echo -e "${BLUE}→ Backend klasörü mevcut, en son kodlar çekiliyor (git pull)...${NC}"
+    git -C "$BACKEND_DIR" remote set-url origin "$BACKEND_REPO" 2>/dev/null || true
     git -C "$BACKEND_DIR" fetch origin "$BRANCH"
     git -C "$BACKEND_DIR" checkout "$BRANCH"
     git -C "$BACKEND_DIR" pull origin "$BRANCH"
@@ -76,7 +77,7 @@ if [ -d "$BACKEND_DIR/.git" ]; then
 elif [ -d "$BACKEND_DIR" ]; then
     echo -e "${YELLOW}[i] Backend klasörü mevcut (git repo değil), mevcut kodlar kullanılacak.${NC}"
 else
-    echo -e "${BLUE}→ Backend klasörü bulunamadı, GitHub'dan klonlanıyor...${NC}"
+    echo -e "${BLUE}→ Backend klasörü bulunamadı, GitHub'dan SSH ile klonlanıyor...${NC}"
     git clone -b "$BRANCH" "$BACKEND_REPO" "$BACKEND_DIR"
     echo -e "${GREEN}✓ Backend başarıyla klonlandı.${NC}"
 fi
@@ -85,6 +86,7 @@ fi
 FRONTEND_DIR="$PARENT_DIR/personal-site-frontend"
 if [ -d "$FRONTEND_DIR/.git" ]; then
     echo -e "${BLUE}→ Frontend klasörü mevcut, en son kodlar çekiliyor (git pull)...${NC}"
+    git -C "$FRONTEND_DIR" remote set-url origin "$FRONTEND_REPO" 2>/dev/null || true
     git -C "$FRONTEND_DIR" fetch origin "$BRANCH"
     git -C "$FRONTEND_DIR" checkout "$BRANCH"
     git -C "$FRONTEND_DIR" pull origin "$BRANCH"
@@ -92,7 +94,7 @@ if [ -d "$FRONTEND_DIR/.git" ]; then
 elif [ -d "$FRONTEND_DIR" ]; then
     echo -e "${YELLOW}[i] Frontend klasörü mevcut (git repo değil), mevcut kodlar kullanılacak.${NC}"
 else
-    echo -e "${BLUE}→ Frontend klasörü bulunamadı, GitHub'dan klonlanıyor...${NC}"
+    echo -e "${BLUE}→ Frontend klasörü bulunamadı, GitHub'dan SSH ile klonlanıyor...${NC}"
     git clone -b "$BRANCH" "$FRONTEND_REPO" "$FRONTEND_DIR"
     echo -e "${GREEN}✓ Frontend başarıyla klonlandı.${NC}"
 fi
