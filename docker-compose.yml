@@ -3,16 +3,18 @@ name: personal-site
 services:
   postgres:
     image: postgres:17-alpine
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: personal_site
-      POSTGRES_USER: personal_site
-      POSTGRES_PASSWORD: personal_site_password
+      POSTGRES_DB: ${POSTGRES_DB:-personal_site}
+      POSTGRES_USER: ${POSTGRES_USER:-personal_site}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-personal_site_password}
     ports:
-      - "5432:5432"
+      # Sadece sunucu içinden (SSH tüneli vs.) erişilebilir, dış internete kapalı
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U personal_site -d personal_site"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-personal_site} -d ${POSTGRES_DB:-personal_site}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -21,12 +23,15 @@ services:
     build:
       context: ../personal-site-backend
       dockerfile: Dockerfile
+    restart: unless-stopped
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: ${ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__PostgreSql: Host=postgres;Port=5432;Database=personal_site;Username=personal_site;Password=personal_site_password
+      ConnectionStrings__PostgreSql: Host=postgres;Port=5432;Database=${POSTGRES_DB:-personal_site};Username=${POSTGRES_USER:-personal_site};Password=${POSTGRES_PASSWORD:-personal_site_password}
+    # API iç ağda frontend tarafından erişilir; dış dünyaya açmaya gerek yoktur.
+    # Sunucu içinden test etmek için localhost'a bağlanabilir:
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -35,12 +40,15 @@ services:
     build:
       context: ../personal-site-frontend
       dockerfile: Dockerfile
+    restart: unless-stopped
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: ${ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:8080
       Api__BaseUrl: http://api:8080
+      Admin__Password: ${ADMIN_PASSWORD:-SerkanBlog2026!}
     ports:
-      - "8081:8080"
+      # Nginx olmadan doğrudan HTTP erişimi için varsayılan 80 portu (İstenirse .env üzerinden değiştirilebilir)
+      - "${PORT:-80}:8080"
     depends_on:
       - api
 
@@ -50,6 +58,7 @@ services:
     build:
       context: ../personal-site-mobile
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "8082:80"
     depends_on:
