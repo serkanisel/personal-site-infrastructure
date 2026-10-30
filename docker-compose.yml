@@ -8,9 +8,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-personal_site}
       POSTGRES_USER: ${POSTGRES_USER:-personal_site}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-personal_site_password}
-    ports:
-      # Sadece sunucu içinden (SSH tüneli vs.) erişilebilir, dış internete kapalı
-      - "127.0.0.1:5432:5432"
+    # Dış port açmıyoruz; API doğrudan Docker iç ağından (postgres:5432) erişir. Çakışma riski sıfır.
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -28,7 +26,7 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__PostgreSql: Host=postgres;Port=5432;Database=${POSTGRES_DB:-personal_site};Username=${POSTGRES_USER:-personal_site};Password=${POSTGRES_PASSWORD:-personal_site_password}
-    # API iç ağda frontend tarafından erişilir; dış dünyaya veya host portuna açmaya gerek yoktur.
+    # Dış port açmıyoruz; Frontend doğrudan Docker iç ağından (http://api:8080) erişir. Çakışma riski sıfır.
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,8 +42,8 @@ services:
       Api__BaseUrl: http://api:8080
       Admin__Password: ${ADMIN_PASSWORD:-SerkanBlog2026!}
     ports:
-      # Nginx üzerinden proxy_pass için localhost:8081 portuna bağlanır (Nginx ile çakışmaz)
-      - "127.0.0.1:${PORT:-8081}:8080"
+      # Sunucudaki 8080, 8085, 4080 vs. hiçbir portla çakışmayan tamamen boş port: 5080
+      - "127.0.0.1:${PORT:-5080}:8080"
     depends_on:
       - api
 
@@ -57,7 +55,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "8082:80"
+      - "127.0.0.1:5082:80"
     depends_on:
       - api
 

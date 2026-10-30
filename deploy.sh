@@ -14,6 +14,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # GitHub Repository Adresleri (SSH formatı - server SSH key'ini kullanır)
+INFRA_REPO="${INFRA_REPO:-git@github.com:serkanisel/personal-site-infrastructure.git}"
 BACKEND_REPO="${BACKEND_REPO:-git@github.com:serkanisel/personal-site-backend.git}"
 FRONTEND_REPO="${FRONTEND_REPO:-git@github.com:serkanisel/personal-site-frontend.git}"
 BRANCH="${BRANCH:-main}"
@@ -40,8 +41,28 @@ else
     exit 1
 fi
 
-# 1. Docker & Docker Compose Kontrolü
-echo -e "\n${YELLOW}[1/6] Docker ve Docker Compose kontrol ediliyor...${NC}"
+# 1. Infrastructure Kendini Güncelleme (Self-Update)
+if [ -z "$DEPLOY_SELF_UPDATED" ] && [ -d "$ENV_DIR/.git" ]; then
+    echo -e "\n${YELLOW}[1/6] Infrastructure güncelleniyor (git pull)...${NC}"
+    git -C "$ENV_DIR" remote set-url origin "$INFRA_REPO" 2>/dev/null || true
+    git -C "$ENV_DIR" fetch origin "$BRANCH" 2>/dev/null || true
+    
+    LOCAL_HASH=$(git -C "$ENV_DIR" rev-parse HEAD 2>/dev/null || echo "")
+    REMOTE_HASH=$(git -C "$ENV_DIR" rev-parse "origin/$BRANCH" 2>/dev/null || echo "")
+    
+    if [ -n "$LOCAL_HASH" ] && [ -n "$REMOTE_HASH" ] && [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
+        echo -e "${BLUE}→ Yeni altyapı güncellemeleri bulundu, çekiliyor...${NC}"
+        git -C "$ENV_DIR" pull origin "$BRANCH"
+        echo -e "${GREEN}✓ Infrastructure güncellendi. Script yeni sürümle yeniden başlatılıyor...${NC}"
+        export DEPLOY_SELF_UPDATED=1
+        exec bash "$0" "$@"
+    else
+        echo -e "${GREEN}✓ Infrastructure zaten güncel.${NC}"
+    fi
+fi
+
+# 2. Docker & Docker Compose Kontrolü
+echo -e "\n${YELLOW}[2/6] Docker ve Docker Compose kontrol ediliyor...${NC}"
 if ! command -v docker &> /dev/null; then
     echo -e "${RED}[!] Docker bulunamadı! Lütfen sunucunuza Docker kurun:${NC}"
     echo "    curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh"
@@ -53,14 +74,6 @@ if ! docker compose version &> /dev/null; then
     exit 1
 fi
 echo -e "${GREEN}✓ Docker ve Docker Compose hazır.${NC}"
-
-# 2. Git Kontrolü
-echo -e "\n${YELLOW}[2/6] Git kontrol ediliyor...${NC}"
-if ! command -v git &> /dev/null; then
-    echo -e "${RED}[!] Git bulunamadı! Lütfen git yükleyin (örn: apt install -y git).${NC}"
-    exit 1
-fi
-echo -e "${GREEN}✓ Git hazır.${NC}"
 
 # 3. Backend ve Frontend Repolarını GitHub'dan Çekme / Güncelleme
 echo -e "\n${YELLOW}[3/6] Backend ve Frontend kaynak kodları senkronize ediliyor...${NC}"
@@ -128,7 +141,7 @@ echo -e "\n${GREEN}======================================================${NC}"
 echo -e "${GREEN}  ✓ KURULUM BAŞARIYLA TAMAMLANDI!                    ${NC}"
 echo -e "${GREEN}======================================================${NC}"
 echo -e "Web siteniz yayında:"
-echo -e "  🌐 Frontend:  http://127.0.0.1:8081 (Nginx üzerinden: https://serkanisel.com.tr)"
+echo -e "  🌐 Frontend:  http://127.0.0.1:5080 (Nginx üzerinden: https://serkanisel.com.tr)"
 echo -e "  ⚙️  Admin:     https://serkanisel.com.tr/admin/login"
 echo -e "  🐘 Postgres:  127.0.0.1:5432 (Yalnızca sunucu içi)"
 echo -e "\nLogları canlı izlemek için:"
