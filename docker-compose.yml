@@ -28,10 +28,7 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__PostgreSql: Host=postgres;Port=5432;Database=${POSTGRES_DB:-personal_site};Username=${POSTGRES_USER:-personal_site};Password=${POSTGRES_PASSWORD:-personal_site_password}
-    # API iç ağda frontend tarafından erişilir; dış dünyaya açmaya gerek yoktur.
-    # Sunucu içinden test etmek için localhost'a bağlanabilir:
-    ports:
-      - "127.0.0.1:8080:8080"
+    # API iç ağda frontend tarafından erişilir; dış dünyaya veya host portuna açmaya gerek yoktur.
     depends_on:
       postgres:
         condition: service_healthy
