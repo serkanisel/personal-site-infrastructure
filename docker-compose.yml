@@ -47,8 +47,8 @@ services:
       Api__BaseUrl: http://api:8080
       Admin__Password: ${ADMIN_PASSWORD:-SerkanBlog2026!}
     ports:
-      # Nginx olmadan doğrudan HTTP erişimi için varsayılan 80 portu (İstenirse .env üzerinden değiştirilebilir)
-      - "${PORT:-80}:8080"
+      # Nginx üzerinden proxy_pass için localhost:8081 portuna bağlanır (Nginx ile çakışmaz)
+      - "127.0.0.1:${PORT:-8081}:8080"
     depends_on:
       - api
 
