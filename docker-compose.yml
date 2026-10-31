@@ -42,8 +42,7 @@ services:
       Api__BaseUrl: http://api:8080
       Admin__Password: ${ADMIN_PASSWORD:-SerkanBlog2026!}
     ports:
-      # Sunucudaki 8080, 8085, 4080 vs. hiçbir portla çakışmayan tamamen boş port: 5080
-      - "127.0.0.1:${PORT:-5080}:8080"
+      - "127.0.0.1:5080:8080"
     depends_on:
       - api
 
