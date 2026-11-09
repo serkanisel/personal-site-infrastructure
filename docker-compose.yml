@@ -8,7 +8,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-personal_site}
       POSTGRES_USER: ${POSTGRES_USER:-personal_site}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-personal_site_password}
-    # Dış port açmıyoruz; API doğrudan Docker iç ağından (postgres:5432) erişir. Çakışma riski sıfır.
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -16,6 +15,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - personal_network
 
   api:
     build:
@@ -26,12 +27,14 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__PostgreSql: Host=postgres;Port=5432;Database=${POSTGRES_DB:-personal_site};Username=${POSTGRES_USER:-personal_site};Password=${POSTGRES_PASSWORD:-personal_site_password}
-    # Dış port açmıyoruz; Frontend doğrudan Docker iç ağından (http://api:8080) erişir. Çakışma riski sıfır.
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - personal_network
 
   frontend:
+    container_name: personal_site_web
     build:
       context: ../personal-site-frontend
       dockerfile: Dockerfile
@@ -45,6 +48,8 @@ services:
       - "127.0.0.1:5080:8080"
     depends_on:
       - api
+    networks:
+      - personal_network
 
   mobile-web:
     profiles:
@@ -57,6 +62,13 @@ services:
       - "127.0.0.1:5082:80"
     depends_on:
       - api
+    networks:
+      - personal_network
 
 volumes:
   postgres_data:
+
+networks:
+  personal_network:
+    name: personal_network
+    driver: bridge
